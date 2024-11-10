@@ -160,7 +160,8 @@ def can_be_pushed_to_jira(obj, form=None):
                 return False, f"Finding below the minimum JIRA severity threshold ({System_Settings.objects.get().jira_minimum_severity}).", "below_minimum_threshold"
     elif isinstance(obj, Finding_Group):
         if not obj.findings.all():
-            return False, f"{to_str_typed(obj)} cannot be pushed to jira as it is empty.", "error_empty"
+            return False
+            # return False, f"{to_str_typed(obj)} cannot be pushed to jira as it is empty.", "error_empty"
         # Accommodating a strange behavior where a finding group sometimes prefers `obj.status` rather than `obj.status()`
         try:
             not_active = "Active" not in obj.status()
@@ -168,7 +169,8 @@ def can_be_pushed_to_jira(obj, form=None):
             not_active = "Active" not in obj.status
         # Determine if the finding group is not active
         if not_active:
-            return False, f"{to_str_typed(obj)} cannot be pushed to jira as it is not active.", "error_inactive"
+            return False
+            # return False, f"{to_str_typed(obj)} cannot be pushed to jira as it is not active.", "error_inactive"
 
     else:
         return False, f"{to_str_typed(obj)} cannot be pushed to jira as it is of unsupported type.", "error_unsupported"
@@ -957,19 +959,26 @@ def update_jira_issue(obj, *args, **kwargs):
             labels=labels + issue.fields.labels,
             environment=jira_environment(obj),
             # Do not update the priority in jira after creation as this could have changed in jira, but should not change in dojo
-            # priority_name=jira_priority(obj),
+            priority_name=jira_priority(obj),
             issuetype_fields=issuetype_fields)
     except Exception as e:
         message = f"Failed to fetch fields for {jira_instance.default_issue_type} under project {jira_project.project_key} - {e}"
         return failure_to_update_message(message, e, obj)
     # Update the issue in jira
     try:
+        findings_priorities = []
+        for find in obj.findings.filter(is_mitigated=False, active=True, verified=True):
+            findings_priorities.append(Finding.get_number_severity(find.severity))
+        # get highest priority from findings_priorities
+        if findings_priorities:
+            fields["priority"]["name"] = get_jira_instance(obj).get_priority(Finding.get_severity(max(findings_priorities)))
+
         logger.debug("sending fields to JIRA: %s", fields)
         issue.update(
             summary=fields["summary"],
             description=fields["description"],
             # Do not update the priority in jira after creation as this could have changed in jira, but should not change in dojo
-            # priority=fields['priority'],
+            priority=fields["priority"],
             fields=fields)
         j_issue.jira_change = timezone.now()
         j_issue.save()

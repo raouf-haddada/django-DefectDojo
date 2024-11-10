@@ -10,6 +10,7 @@ services:
       DD_ADMIN_USER: "${DD_ADMIN_USER:-admin}"
       DD_ADMIN_PASSWORD: "${DD_ADMIN_PASSWORD:-admin}"
       DD_EMAIL_URL: "smtp://mailhog:1025"
+      DD_JIRA_EXTRA_ISSUE_TYPES: "Vulnerability"
   celeryworker:
     volumes:
       - '.:/app:z'
@@ -17,6 +18,7 @@ services:
       PYTHONWARNINGS: error  # We are strict about Warnings during development
       DD_DEBUG: 'True'
       DD_EMAIL_URL: "smtp://mailhog:1025"
+      DD_JIRA_EXTRA_ISSUE_TYPES: "Vulnerability"
   celerybeat:
     volumes:
       - '.:/app:z'
@@ -31,6 +33,7 @@ services:
       DD_DEBUG: 'True'
       DD_ADMIN_USER: "${DD_ADMIN_USER:-admin}"
       DD_ADMIN_PASSWORD: "${DD_ADMIN_PASSWORD:-admin}"
+      DD_JIRA_EXTRA_ISSUE_TYPES: "Vulnerability"
   nginx:
     volumes:
       - './dojo/static/dojo:/usr/share/nginx/html/static/dojo'

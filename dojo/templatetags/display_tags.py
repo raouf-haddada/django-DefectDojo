@@ -255,6 +255,17 @@ def group_sla(group):
     finding = group.findings.all().order_by("severity").first()
     return finding_sla(finding)
 
+@register.filter(name="count_active")
+def count_active(group):
+    count_act = 0
+    for finding in group.findings.all():
+        if finding.active:
+            count_act += 1
+    return count_act
+
+@register.filter
+def subtract(group):
+    return 50 - count_active(group)
 
 @register.filter(name="finding_sla")
 def finding_sla(finding):
